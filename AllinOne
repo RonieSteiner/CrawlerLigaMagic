@@ -1,0 +1,34 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+import numpy as np
+
+#Converte o Excel em list
+df = pd.read_excel('AllMagicCards.xlsx').values.tolist()
+
+#Looping que irá percorrer todas as cartas da lista
+for x in range(len(df)):
+    #Request
+    req = requests.get("https://www.ligamagic.com/?view=cards%2Fsearch&card="+str(df[x][0]).replace(' ','+'))
+    if req.status_code == 200:
+        soup = BeautifulSoup(req.content, 'html.parser')
+        if soup.find('div',{'id':'mobile-precos-menor'}) != None:
+                df[x].append(float((soup.find('div',{'id':'precos-menor'})).text.replace('R$ ','').replace(',','.')))
+        else:
+                df[x].append(0)
+        if soup.find('div',{'id':'mobile-precos-medio'}) != None:
+                df[x].append(float((soup.find('div',{'id':'precos-medio'})).text.replace('R$ ','').replace(',','.')))
+        else:
+                df[x].append(0)
+        if soup.find('div',{'id':'mobile-precos-maior'}) != None:
+                df[x].append(float((soup.find('div',{'id':'precos-maior'})).text.replace('R$ ','').replace(',','.')))
+        else:
+                df[x].append(0)
+
+    else:
+        None
+
+df = pd.DataFrame(df)
+writer = pd.ExcelWriter('AllMagicCard_com_preco_LIGA.xlsx', engine='xlsxwriter')
+df.to_excel(writer,sheet_name='welcome',index=False)
+writer.save()
